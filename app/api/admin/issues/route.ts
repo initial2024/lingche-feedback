@@ -4,10 +4,40 @@ import { listFeedbackIssues } from '@/lib/github';
 
 export const dynamic = 'force-dynamic';
 
+function normalizeAdminToken(input: string): string {
+  return input
+    .trim()
+    .replace(/^ADMIN_TOKEN\s*=\s*/i, '')
+    .trim();
+}
+
 export async function GET(request: Request) {
-  const token = request.headers.get('x-admin-token') || '';
-  if (!securityConfig.adminToken || token !== securityConfig.adminToken) {
-    return NextResponse.json({ ok: false, error: '未授权。' }, { status: 401 });
+  const rawToken = request.headers.get('x-admin-token') || '';
+  const token = normalizeAdminToken(rawToken);
+  const expected = normalizeAdminToken(securityConfig.adminToken || '');
+
+  if (!expected) {
+    return NextResponse.json({
+      ok: false,
+      error_code: 'admin_token_not_configured',
+      error: '服务端未配置 ADMIN_TOKEN，请检查 Vercel Production 环境变量。',
+    }, { status: 503 });
+  }
+
+  if (!token) {
+    return NextResponse.json({
+      ok: false,
+      error_code: 'admin_token_missing',
+      error: '请输入管理员 Token。',
+    }, { status: 401 });
+  }
+
+  if (token !== expected) {
+    return NextResponse.json({
+      ok: false,
+      error_code: 'admin_token_mismatch',
+      error: '管理员 Token 不匹配。请确认使用的是 Vercel Production 的 ADMIN_TOKEN。',
+    }, { status: 401 });
   }
 
   const url = new URL(request.url);

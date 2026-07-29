@@ -93,6 +93,9 @@ label { display: block; margin: 18px 0 8px; color: var(--muted); font-size: 14px
 .result-success { border: 1px solid rgba(66,217,155,.35); background: rgba(66,217,155,.1); color: var(--ok); }
 .result-error { border: 1px solid rgba(255,113,136,.35); background: rgba(255,113,136,.1); color: var(--bad); }
 .result-info { border: 1px solid rgba(77,198,232,.35); background: rgba(77,198,232,.08); color: var(--accent); }
+.admin-help { margin-top: 22px; padding: 15px 16px; border-left: 3px solid var(--accent); background: rgba(77,198,232,.07); color: var(--muted); line-height: 1.7; }
+.admin-help strong { color: var(--text); }
+.admin-help ol { margin: 8px 0 0; padding-left: 21px; }
 .table-wrap { width: 100%; overflow-x: auto; margin-top: 24px; }
 .table { width: 100%; min-width: 620px; border-collapse: collapse; }
 .table td, .table th { border-bottom: 1px solid var(--line); text-align: left; padding: 13px 12px; vertical-align: top; }

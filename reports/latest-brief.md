@@ -2,6 +2,15 @@
 
 更新时间：2026-07-29
 
+## ADMIN_TOKEN 诊断与规范化
+
+- 本轮只修改反馈站管理页和管理接口；未修改灵澈 App、W Worker、V 后端、`/api/latest` 或 `/api/feedback/report`。
+- 后端增加 `admin_token_not_configured`、`admin_token_missing`、`admin_token_mismatch` 三种不泄露密钥的错误码。
+- 前端会去除 `ADMIN_TOKEN=` 前缀、首尾空格和换行；空输入不发请求；可通过“清除本地 Token”移除旧缓存。
+- 新增只读 `GET /api/admin/status`，只报告 `adminTokenConfigured`，不返回 Token、长度或哈希。
+- Vercel 配置：Key 为 `ADMIN_TOKEN`，Value 只填写用户自己的随机 Token，不要填写 `ADMIN_TOKEN=xxx`；Environment 选择 Production，修改后需重新部署 `lingche-feedback-gnkt`。
+- Token 不会写入报告、URL、日志或 Git。
+
 本轮只更新反馈站 `initial2024/lingche-feedback`，未修改灵澈 Android App、W Worker、V 后端或聊天项目。
 
 ## 最新 APK

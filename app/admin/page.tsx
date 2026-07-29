@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { normalizeAdminToken, type AdminTokenShape } from '@/lib/admin-token';
 
 const ADMIN_TOKEN_STORAGE = 'LINGCHE_ADMIN_TOKEN';
 
@@ -19,11 +20,55 @@ type Result = {
   text: string;
 } | null;
 
-function normalizeAdminToken(input: string): string {
-  return input
-    .trim()
-    .replace(/^ADMIN_TOKEN\s*=\s*/i, '')
-    .trim();
+type AdminStatus = {
+  adminTokenConfigured: boolean;
+  adminTokenShape?: AdminTokenShape;
+};
+
+type AuthorizationDiagnostic = {
+  serverTokenConfigured: boolean;
+  server: AdminTokenShape;
+  received: AdminTokenShape;
+  normalizedLengthEqual: boolean;
+  normalizedMatch: boolean;
+};
+
+function getDiagnosticAdvice(diagnostic: AuthorizationDiagnostic): string[] {
+  const advice: string[] = [];
+
+  if (!diagnostic.normalizedLengthEqual) {
+    advice.push('服务端 token 长度与输入 token 长度不同。请检查 Vercel Value 是否多填、少填、带引号或复制错误。');
+  }
+  if (diagnostic.server.hadWrappingQuotes) {
+    advice.push('Vercel ADMIN_TOKEN 可能被引号包裹，请删除引号后重新部署。');
+  }
+  if (diagnostic.server.hadAdminTokenPrefix) {
+    advice.push('Vercel Value 中包含 ADMIN_TOKEN= 前缀。当前代码会兼容，但建议只保留 token 本体。');
+  }
+  if (diagnostic.normalizedLengthEqual && !diagnostic.normalizedMatch) {
+    advice.push('长度相同但内容不一致。请删除 Vercel ADMIN_TOKEN 后重新新建一个简单 ASCII token，并重新 Redeploy。');
+  }
+
+  return advice;
+}
+
+function buildDiagnosticText(diagnostic: AuthorizationDiagnostic): string {
+  const lines = [
+    '授权诊断（不包含 Token 内容）',
+    `服务端 ADMIN_TOKEN 已配置：${diagnostic.serverTokenConfigured}`,
+    `服务端 normalized 长度：${diagnostic.server.normalizedLength}`,
+    `输入 normalized 长度：${diagnostic.received.normalizedLength}`,
+    `长度是否相同：${diagnostic.normalizedLengthEqual}`,
+    `服务端带 ADMIN_TOKEN= 前缀：${diagnostic.server.hadAdminTokenPrefix}`,
+    `输入带 ADMIN_TOKEN= 前缀：${diagnostic.received.hadAdminTokenPrefix}`,
+    `服务端带引号：${diagnostic.server.hadWrappingQuotes}`,
+    `输入带引号：${diagnostic.received.hadWrappingQuotes}`,
+    `服务端带换行：${diagnostic.server.hadNewline}`,
+    `输入带换行：${diagnostic.received.hadNewline}`,
+    `normalizedMatch：${diagnostic.normalizedMatch}`,
+  ];
+
+  return lines.join('\n');
 }
 
 export default function AdminPage() {
@@ -31,12 +76,30 @@ export default function AdminPage() {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [result, setResult] = useState<Result>(null);
   const [loading, setLoading] = useState(false);
+  const [adminStatus, setAdminStatus] = useState<AdminStatus | null>(null);
+  const [diagnostic, setDiagnostic] = useState<AuthorizationDiagnostic | null>(null);
 
   useEffect(() => {
     const cached = normalizeAdminToken(localStorage.getItem(ADMIN_TOKEN_STORAGE) || '');
     if (cached) localStorage.setItem(ADMIN_TOKEN_STORAGE, cached);
     setToken(cached);
+    void loadAdminStatus();
   }, []);
+
+  async function loadAdminStatus() {
+    try {
+      const response = await fetch('/api/admin/status', { cache: 'no-store' });
+      const data = await response.json();
+      if (response.ok && data.ok) {
+        setAdminStatus({
+          adminTokenConfigured: Boolean(data.adminTokenConfigured),
+          adminTokenShape: data.adminTokenShape,
+        });
+      }
+    } catch {
+      // Status is advisory only; authenticated issue reads remain the source of truth.
+    }
+  }
 
   async function load() {
     if (loading) return;
@@ -50,6 +113,7 @@ export default function AdminPage() {
     setToken(normalizedToken);
     localStorage.setItem(ADMIN_TOKEN_STORAGE, normalizedToken);
     setLoading(true);
+    setDiagnostic(null);
     setResult({ kind: 'info', text: '正在读取反馈列表…' });
 
     try {
@@ -58,10 +122,12 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.ok) {
+        if (data.diagnostic) setDiagnostic(data.diagnostic as AuthorizationDiagnostic);
         const prefix = data.error_code ? `[${data.error_code}] ` : '';
         throw new Error(`${prefix}${data.error || '读取失败'}`);
       }
       setIssues(data.issues || []);
+      await loadAdminStatus();
       setResult({ kind: 'success', text: `已读取 ${data.issues?.length || 0} 条反馈。` });
     } catch (error: any) {
       setResult({ kind: 'error', text: String(error?.message || error) });
@@ -74,7 +140,19 @@ export default function AdminPage() {
     localStorage.removeItem(ADMIN_TOKEN_STORAGE);
     setToken('');
     setIssues([]);
+    setDiagnostic(null);
     setResult({ kind: 'success', text: '已清除本地保存的 Token。' });
+  }
+
+  async function copyDiagnostic() {
+    if (!diagnostic) return;
+
+    try {
+      await navigator.clipboard.writeText(buildDiagnosticText(diagnostic));
+      setResult({ kind: 'success', text: '已复制不含 Token 内容的授权诊断。' });
+    } catch {
+      setResult({ kind: 'error', text: '复制授权诊断失败，请检查浏览器剪贴板权限。' });
+    }
   }
 
   return (
@@ -96,6 +174,39 @@ export default function AdminPage() {
         <button type="button" className="secondary" onClick={clearLocalToken}>清除本地 Token</button>
       </div>
       {result && <div className={`result-${result.kind}`}>{result.text}</div>}
+      <div className="admin-status" aria-live="polite">
+        <strong>服务端 ADMIN_TOKEN：</strong>{adminStatus?.adminTokenConfigured ? '已配置' : '未配置或状态读取中'}
+        {adminStatus?.adminTokenShape && <span>服务端 token normalized 长度：{adminStatus.adminTokenShape.normalizedLength}</span>}
+      </div>
+      {diagnostic && (
+        <section className="diagnostic-card" aria-live="polite">
+          <div className="diagnostic-heading">
+            <div>
+              <div className="eyebrow">AUTHORIZATION DIAGNOSTIC</div>
+              <h2>授权诊断</h2>
+            </div>
+            <button type="button" className="secondary" onClick={copyDiagnostic}>复制授权诊断</button>
+          </div>
+          <div className="diagnostic-grid">
+            <span>服务端 ADMIN_TOKEN 已配置</span><strong>{String(diagnostic.serverTokenConfigured)}</strong>
+            <span>服务端 normalized 长度</span><strong>{diagnostic.server.normalizedLength}</strong>
+            <span>输入 normalized 长度</span><strong>{diagnostic.received.normalizedLength}</strong>
+            <span>长度是否相同</span><strong>{String(diagnostic.normalizedLengthEqual)}</strong>
+            <span>服务端带 ADMIN_TOKEN= 前缀</span><strong>{String(diagnostic.server.hadAdminTokenPrefix)}</strong>
+            <span>输入带 ADMIN_TOKEN= 前缀</span><strong>{String(diagnostic.received.hadAdminTokenPrefix)}</strong>
+            <span>服务端带引号</span><strong>{String(diagnostic.server.hadWrappingQuotes)}</strong>
+            <span>输入带引号</span><strong>{String(diagnostic.received.hadWrappingQuotes)}</strong>
+            <span>服务端带换行</span><strong>{String(diagnostic.server.hadNewline)}</strong>
+            <span>输入带换行</span><strong>{String(diagnostic.received.hadNewline)}</strong>
+            <span>normalizedMatch</span><strong>{String(diagnostic.normalizedMatch)}</strong>
+          </div>
+          {getDiagnosticAdvice(diagnostic).length > 0 && (
+            <ul className="diagnostic-advice">
+              {getDiagnosticAdvice(diagnostic).map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          )}
+        </section>
+      )}
       <div className="admin-help">
         <strong>如果一直未授权，请检查：</strong>
         <ol>

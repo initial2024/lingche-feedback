@@ -7,9 +7,12 @@
 - 本轮只修改反馈站管理页和管理接口；未修改灵澈 App、W Worker、V 后端、`/api/latest` 或 `/api/feedback/report`。
 - 后端增加 `admin_token_not_configured`、`admin_token_missing`、`admin_token_mismatch` 三种不泄露密钥的错误码。
 - 前端会去除 `ADMIN_TOKEN=` 前缀、首尾空格和换行；空输入不发请求；可通过“清除本地 Token”移除旧缓存。
-- 新增只读 `GET /api/admin/status`，只报告 `adminTokenConfigured`，不返回 Token、长度或哈希。
+- 新增安全 Token 形态诊断：仅返回长度、首尾空白、`ADMIN_TOKEN=` 前缀、包裹引号、换行和空值标记；不返回 Token 明文、规范化内容或哈希。
+- `admin_token_mismatch` 响应会安全对比服务端与输入的形态；`GET /api/admin/status` 也返回 `adminTokenShape`，便于确认 Production 环境变量是否带有引号、前缀或意外空白。
+- `/admin` 页面初始化时读取 `/api/admin/status`，鉴权失败后展示授权诊断和不含 Token 内容的“复制授权诊断”按钮。
 - Vercel 配置：Key 为 `ADMIN_TOKEN`，Value 只填写用户自己的随机 Token，不要填写 `ADMIN_TOKEN=xxx`；Environment 选择 Production，修改后需重新部署 `lingche-feedback-gnkt`。
 - Token 不会写入报告、URL、日志或 Git。
+- 本轮本地验证：`npm.cmd run lint` PASS，`npm.cmd run build` PASS；Vercel Production 将在推送后单独检查。
 
 本轮只更新反馈站 `initial2024/lingche-feedback`，未修改灵澈 Android App、W Worker、V 后端或聊天项目。
 

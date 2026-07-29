@@ -1,20 +1,16 @@
 import { NextResponse } from 'next/server';
+import { analyzeAdminToken, getAdminTokenShape } from '@/lib/admin-token';
 import { securityConfig } from '@/lib/config';
 import { listFeedbackIssues } from '@/lib/github';
 
 export const dynamic = 'force-dynamic';
 
-function normalizeAdminToken(input: string): string {
-  return input
-    .trim()
-    .replace(/^ADMIN_TOKEN\s*=\s*/i, '')
-    .trim();
-}
-
 export async function GET(request: Request) {
   const rawToken = request.headers.get('x-admin-token') || '';
-  const token = normalizeAdminToken(rawToken);
-  const expected = normalizeAdminToken(securityConfig.adminToken || '');
+  const received = analyzeAdminToken(rawToken);
+  const server = analyzeAdminToken(securityConfig.adminToken || '');
+  const token = received.normalized;
+  const expected = server.normalized;
 
   if (!expected) {
     return NextResponse.json({
@@ -37,6 +33,13 @@ export async function GET(request: Request) {
       ok: false,
       error_code: 'admin_token_mismatch',
       error: '管理员 Token 不匹配。请确认使用的是 Vercel Production 的 ADMIN_TOKEN。',
+      diagnostic: {
+        serverTokenConfigured: true,
+        server: getAdminTokenShape(securityConfig.adminToken || ''),
+        received: getAdminTokenShape(rawToken),
+        normalizedLengthEqual: server.normalizedLength === received.normalizedLength,
+        normalizedMatch: false,
+      },
     }, { status: 401 });
   }
 

@@ -17,7 +17,7 @@ export default function HomePage() {
       <section className="grid">
         <div className="card"><h2>最新版</h2><p>{latest.title}</p><p className="ok">versionCode：{latest.versionCode}</p></div>
         <div className="card"><h2>App 接口</h2><p><code>/api/latest</code> 检查更新；<code>/api/feedback/report</code> 接收诊断报告。</p></div>
-        <div className="card"><h2>下载镜像</h2><p>{latest.chinaMirrorUrl || '暂未配置大陆备用下载地址'}</p></div>
+        <div className="card"><h2>下载镜像</h2><p>{latest.chinaMirrorUrl ? <a href={latest.chinaMirrorUrl}>打开正式下载地址</a> : '正式下载地址待配置；局域网 APK 仅用于本地测试。'}</p></div>
       </section>
     </>
   );

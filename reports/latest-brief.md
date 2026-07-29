@@ -13,6 +13,7 @@
 - Vercel 配置：Key 为 `ADMIN_TOKEN`，Value 只填写用户自己的随机 Token，不要填写 `ADMIN_TOKEN=xxx`；Environment 选择 Production，修改后需重新部署 `lingche-feedback-gnkt`。
 - Token 不会写入报告、URL、日志或 Git。
 - 本轮本地验证：`npm.cmd run lint` PASS，`npm.cmd run build` PASS；Vercel Production 将在推送后单独检查。
+- 安全形态诊断提交后，GitHub 记录的 `Vercel – lingche-feedback-gnkt` 部署仍为 `pending`，正式域名尚返回旧版状态接口；因此不能宣称本轮 Production 已 READY，需等待该部署完成后再验收。
 
 本轮只更新反馈站 `initial2024/lingche-feedback`，未修改灵澈 Android App、W Worker、V 后端或聊天项目。
 

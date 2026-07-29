@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </nav>
           {children}
-          <div className="footer">默认不收集任何内容；只有 App 或用户主动提交后，反馈才会发送到此站点。</div>
+          <div className="footer">灵澈反馈站 · 仅在用户主动提交时接收反馈 · 版本与诊断数据默认应脱敏</div>
         </main>
       </body>
     </html>

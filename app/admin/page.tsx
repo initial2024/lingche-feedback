@@ -38,15 +38,7 @@ export default function AdminPage() {
   }
 
   return (
-    <section className="card">
-      <h1>反馈管理</h1>
-      <p>输入 Vercel 环境变量 <code>ADMIN_TOKEN</code> 后可读取 GitHub Issues 中的反馈。处理、关闭、打标签建议直接在 GitHub Issues 页面完成。</p>
-      <label>管理员 Token</label>
-      <input value={token} onChange={(e) => setToken(e.target.value)} type="password" placeholder="ADMIN_TOKEN" />
-      <p><button onClick={load}>读取反馈列表</button></p>
-      {result && <pre>{result}</pre>}
-      {issues.length > 0 && (
-        <table className="table">
+    <section className="card admin-card"><div className="eyebrow">GITHUB ISSUES</div><h1>反馈管理</h1><p>输入 Vercel 环境变量 <code>ADMIN_TOKEN</code> 后读取 GitHub Issues 中的反馈。Token 只在本机浏览器使用，不会展示在页面上。</p><label htmlFor="admin-token">管理员 Token</label><input id="admin-token" value={token} onChange={(e) => setToken(e.target.value)} type="password" placeholder="ADMIN_TOKEN" /><div className="form-actions"><button onClick={load}>读取反馈列表</button><span className="muted">处理、关闭、打标签请在 GitHub Issues 完成。</span></div>{result && <div className={result.startsWith('已读取') ? 'result-success' : 'result-error'}>{result}</div>}{issues.length > 0 && <div className="table-wrap"><table className="table">
           <thead><tr><th>#</th><th>标题</th><th>标签</th><th>时间</th></tr></thead>
           <tbody>
             {issues.map((issue) => (
@@ -58,8 +50,7 @@ export default function AdminPage() {
               </tr>
             ))}
           </tbody>
-        </table>
-      )}
+        </table></div>}
     </section>
   );
 }

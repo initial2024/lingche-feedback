@@ -32,3 +32,11 @@
 - 原因：Vercel 环境变量优先于代码 fallback，本轮环境没有 Vercel CLI/token，无法直接修改正式项目 `lingche-feedback-gnkt` 的 Production 环境变量。
 - Vercel 项目 READY 状态：未能通过本地 CLI/API 直接确认；域名 HTTP 200 只能证明当前部署可访问，不能替代控制台 READY 验证。
 - 待配置：将本报告顶部的版本、versionCode、title、APK URL、chinaMirrorUrl、SHA256 写入 Vercel Production 环境变量，并重新部署。
+
+## 验证结果
+
+- `npm.cmd run lint`：PASS
+- `npm.cmd run build`：PASS
+- `/api/feedback/report`：本轮未修改
+- APK：未上传或提交到反馈站 Git 仓库
+- Vercel：正式域名 HTTP 200；Production 元数据仍需在 `lingche-feedback-gnkt` 环境变量中确认并更新，因此本轮不能宣称线上最新版元数据已完全切换。

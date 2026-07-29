@@ -85,10 +85,12 @@ button:disabled { cursor: wait; opacity: .62; }
 .form-card h1, .admin-card h1 { font-size: clamp(34px, 7vw, 52px); }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 input, textarea, select { width: 100%; border: 1px solid var(--line); background: #0a1422; color: var(--text); border-radius: 11px; padding: 12px 13px; font: inherit; outline: none; }
+.token-input-row { display: flex; gap: 10px; align-items: stretch; }
+.token-input-row button { flex: 0 0 auto; }
 input:focus, textarea:focus, select:focus { border-color: rgba(77,198,232,.7); box-shadow: 0 0 0 3px rgba(77,198,232,.1); }
 textarea { min-height: 130px; resize: vertical; }
 label { display: block; margin: 18px 0 8px; color: var(--muted); font-size: 14px; font-weight: 650; }
-.form-actions .muted { font-size: 13px; }
+  .form-actions .muted { font-size: 13px; }
 .result-success, .result-error, .result-info { margin-top: 20px; padding: 14px 16px; border-radius: 12px; line-height: 1.6; }
 .result-success { border: 1px solid rgba(66,217,155,.35); background: rgba(66,217,155,.1); color: var(--ok); }
 .result-error { border: 1px solid rgba(255,113,136,.35); background: rgba(255,113,136,.1); color: var(--bad); }
@@ -98,6 +100,8 @@ label { display: block; margin: 18px 0 8px; color: var(--muted); font-size: 14px
 .admin-help ol { margin: 8px 0 0; padding-left: 21px; }
 .admin-status { display: flex; gap: 8px 16px; flex-wrap: wrap; margin-top: 16px; color: var(--muted); font-size: 14px; }
 .admin-status strong { color: var(--text); }
+.local-input-diagnostic { display: flex; gap: 7px 15px; flex-wrap: wrap; margin-top: 18px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.03); color: var(--muted); font-size: 13px; line-height: 1.5; }
+.local-input-diagnostic strong { width: 100%; color: var(--text); }
 .diagnostic-card { margin-top: 22px; padding: 18px; border: 1px solid rgba(255, 200, 87, .36); border-radius: 14px; background: rgba(255, 200, 87, .07); }
 .diagnostic-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
 .diagnostic-heading h2 { margin: 6px 0 0; }
@@ -131,4 +135,7 @@ pre { white-space: pre-wrap; word-break: break-word; background: #07101b; border
   .diagnostic-heading { flex-direction: column; }
   .diagnostic-grid { grid-template-columns: minmax(0, 1fr); gap: 3px; }
   .diagnostic-grid strong { text-align: left; margin-bottom: 8px; }
+  .local-input-diagnostic { flex-direction: column; gap: 4px; }
+  .token-input-row { align-items: stretch; }
+  .token-input-row button { padding: 9px 12px; }
 }

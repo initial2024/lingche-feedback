@@ -14,6 +14,9 @@
 - Token 不会写入报告、URL、日志或 Git。
 - 本轮本地验证：`npm.cmd run lint` PASS，`npm.cmd run build` PASS；Vercel Production 将在推送后单独检查。
 - 安全形态诊断提交后，GitHub 记录的 `Vercel – lingche-feedback-gnkt` 部署仍为 `pending`，正式域名尚返回旧版状态接口；因此不能宣称本轮 Production 已 READY，需等待该部署完成后再验收。
+- V4 增加请求头往返诊断：管理页在发送前显示本地规范化长度与形态，并标注是否已经发送 `X-Admin-Token`；`admin_token_mismatch` 响应改为返回后端实际收到 header 的安全长度/形态和服务端对应形态。两端都不返回 Token 明文或哈希。
+- V5 改为从真实 DOM 输入框读取本次 Token，先调用 `GET /api/admin/token-echo` 回显安全 header 形态，再使用同一个规范化值读取 Issues；localStorage 仅在 Issues 成功后更新，避免旧缓存覆盖当前输入。
+- V5 本地验证：`token-echo` 仅返回 header 是否存在、长度、前缀/引号/换行/零宽字符等标记，不回显 header 内容；`npm.cmd run lint` 和 `npm.cmd run build` 均为 PASS。
 
 本轮只更新反馈站 `initial2024/lingche-feedback`，未修改灵澈 Android App、W Worker、V 后端或聊天项目。
 

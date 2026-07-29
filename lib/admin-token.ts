@@ -6,6 +6,7 @@ export type AdminTokenShape = {
   hadAdminTokenPrefix: boolean;
   hadWrappingQuotes: boolean;
   hadNewline: boolean;
+  hasZeroWidthChars: boolean;
   isEmptyAfterNormalize: boolean;
 };
 
@@ -28,6 +29,7 @@ export function analyzeAdminToken(input: string | null | undefined): AdminTokenA
       (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
       (trimmed.startsWith("'") && trimmed.endsWith("'")),
     hadNewline: /[\r\n]/.test(raw),
+    hasZeroWidthChars: /[\u200B-\u200D\uFEFF]/.test(raw),
     isEmptyAfterNormalize: normalized.length === 0,
     normalized,
   };

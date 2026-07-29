@@ -6,7 +6,8 @@ import { listFeedbackIssues } from '@/lib/github';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const rawToken = request.headers.get('x-admin-token') || '';
+  const headerToken = request.headers.get('x-admin-token');
+  const rawToken = headerToken || '';
   const received = analyzeAdminToken(rawToken);
   const server = analyzeAdminToken(securityConfig.adminToken || '');
   const token = received.normalized;
@@ -35,6 +36,7 @@ export async function GET(request: Request) {
       error: '管理员 Token 不匹配。请确认使用的是 Vercel Production 的 ADMIN_TOKEN。',
       diagnostic: {
         serverTokenConfigured: true,
+        headerPresent: headerToken !== null,
         server: getAdminTokenShape(securityConfig.adminToken || ''),
         received: getAdminTokenShape(rawToken),
         normalizedLengthEqual: server.normalizedLength === received.normalizedLength,

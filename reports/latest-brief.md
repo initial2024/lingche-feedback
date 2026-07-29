@@ -27,4 +27,8 @@
 - 正式 Vercel 项目：`lingche-feedback-gnkt`
 - 正式域名：`https://lcfeedback.ccwu.cc`
 - APK 未提交到 GitHub。
-- Vercel 部署与公网 `/api/latest` 结果：待本轮 push 后确认。
+- GitHub commit：`df5517be031e1ff508f4ab56c5ba0dc9d66b98df`
+- 公网 `https://lcfeedback.ccwu.cc/api/latest`：HTTP 200，站点可访问；当前仍返回 Vercel 环境变量中的旧 `versionCode=118`、旧 title、旧 APK URL 和旧 chinaMirrorUrl。
+- 原因：Vercel 环境变量优先于代码 fallback，本轮环境没有 Vercel CLI/token，无法直接修改正式项目 `lingche-feedback-gnkt` 的 Production 环境变量。
+- Vercel 项目 READY 状态：未能通过本地 CLI/API 直接确认；域名 HTTP 200 只能证明当前部署可访问，不能替代控制台 READY 验证。
+- 待配置：将本报告顶部的版本、versionCode、title、APK URL、chinaMirrorUrl、SHA256 写入 Vercel Production 环境变量，并重新部署。

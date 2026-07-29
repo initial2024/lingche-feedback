@@ -17,6 +17,8 @@
 - V4 增加请求头往返诊断：管理页在发送前显示本地规范化长度与形态，并标注是否已经发送 `X-Admin-Token`；`admin_token_mismatch` 响应改为返回后端实际收到 header 的安全长度/形态和服务端对应形态。两端都不返回 Token 明文或哈希。
 - V5 改为从真实 DOM 输入框读取本次 Token，先调用 `GET /api/admin/token-echo` 回显安全 header 形态，再使用同一个规范化值读取 Issues；localStorage 仅在 Issues 成功后更新，避免旧缓存覆盖当前输入。
 - V5 本地验证：`token-echo` 仅返回 header 是否存在、长度、前缀/引号/换行/零宽字符等标记，不回显 header 内容；`npm.cmd run lint` 和 `npm.cmd run build` 均为 PASS。
+- 本轮 GitHub API 诊断：`lib/github.ts` 将 401 Bad credentials、403 权限不足、404 仓库不可访问、配置缺失分别映射为明确错误码；新增受 ADMIN_TOKEN 保护的 `/api/admin/github-status?probe=1`，只返回配置形态与仓库试连结果，不返回 GITHUB_TOKEN 明文或哈希。
+- Vercel Production 应分别配置：`ADMIN_TOKEN` 用于进入管理页；`GITHUB_TOKEN` 使用 GitHub PAT 本体，用于访问 `initial2024/lingche-feedback` 的 Issues。推荐 Fine-grained PAT 权限为 Issues: Read and write、Contents: Read、Metadata: Read-only，修改后需 Redeploy。
 
 本轮只更新反馈站 `initial2024/lingche-feedback`，未修改灵澈 Android App、W Worker、V 后端或聊天项目。
 

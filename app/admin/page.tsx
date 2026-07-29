@@ -39,6 +39,26 @@ type AuthorizationDiagnostic = {
   normalizedMatch: boolean;
 };
 
+type GithubStatus = {
+  ok: boolean;
+  error_code?: string;
+  error?: string;
+  adminAuthPassed?: boolean;
+  github?: {
+    ownerConfigured: boolean;
+    repoConfigured: boolean;
+    tokenConfigured: boolean;
+    tokenShape: AdminTokenShape;
+    repo: string;
+  };
+  probe?: {
+    ok: boolean;
+    status: number | null;
+    code: string;
+    message: string;
+  };
+};
+
 type SubmissionDiagnostic = {
   dom: AdminTokenShape;
   state: AdminTokenShape;
@@ -109,6 +129,7 @@ export default function AdminPage() {
   const [adminStatus, setAdminStatus] = useState<AdminStatus | null>(null);
   const [submission, setSubmission] = useState<SubmissionDiagnostic | null>(null);
   const [diagnostic, setDiagnostic] = useState<AuthorizationDiagnostic | null>(null);
+  const [githubStatus, setGithubStatus] = useState<GithubStatus | null>(null);
 
   useEffect(() => {
     const cached = normalizeAdminToken(localStorage.getItem(ADMIN_TOKEN_STORAGE) || '');
@@ -219,6 +240,32 @@ export default function AdminPage() {
     }
   }
 
+  async function checkGithubStatus() {
+    const domValue = inputRef.current?.value ?? '';
+    const normalizedToken = normalizeAdminToken(domValue);
+    if (!normalizedToken) {
+      setResult({ kind: 'error', text: '请输入管理员 Token 后再检查 GitHub Token 状态。' });
+      return;
+    }
+
+    setResult({ kind: 'info', text: '正在检查 GitHub Token 状态…' });
+    try {
+      const response = await fetch('/api/admin/github-status?probe=1', {
+        headers: { 'X-Admin-Token': normalizedToken },
+        cache: 'no-store',
+      });
+      const data = await response.json() as GithubStatus;
+      setGithubStatus(data);
+      if (!response.ok || !data.ok || !data.probe?.ok) {
+        setResult({ kind: 'error', text: `[${data.error_code || data.probe?.code || 'github_api_error'}] ${data.error || data.probe?.message || 'GitHub Token 检查失败。'}` });
+        return;
+      }
+      setResult({ kind: 'success', text: 'GitHub Token 已通过仓库访问检查。' });
+    } catch (error: any) {
+      setResult({ kind: 'error', text: `GitHub Token 检查失败：${String(error?.message || error)}` });
+    }
+  }
+
   function clearLocalToken() {
     localStorage.removeItem(ADMIN_TOKEN_STORAGE);
     setToken('');
@@ -263,6 +310,7 @@ export default function AdminPage() {
       </div>
       <div className="form-actions">
         <button type="button" onClick={load} disabled={loading}>{loading ? '正在读取…' : '读取反馈列表'}</button>
+        <button type="button" className="secondary" onClick={checkGithubStatus} disabled={loading}>检查 GitHub Token 状态</button>
         <button type="button" className="secondary" onClick={clearLocalToken}>清除本地 Token</button>
         {submission && <button type="button" className="secondary" onClick={copyDiagnostic}>复制授权诊断</button>}
       </div>
@@ -291,6 +339,23 @@ export default function AdminPage() {
         <strong>服务端 ADMIN_TOKEN：</strong>{adminStatus?.adminTokenConfigured ? '已配置' : '未配置或状态读取中'}
         {adminStatus?.adminTokenShape && <span>服务端 token normalized 长度：{adminStatus.adminTokenShape.normalizedLength}</span>}
       </div>
+      {githubStatus && (
+        <section className="diagnostic-card github-status-card" aria-live="polite">
+          <div className="eyebrow">GITHUB API STATUS</div>
+          <h2>GitHub Token 状态</h2>
+          <div className="diagnostic-grid">
+            <span>管理员鉴权</span><strong>{String(githubStatus.adminAuthPassed ?? false)}</strong>
+            <span>Owner 已配置</span><strong>{String(githubStatus.github?.ownerConfigured ?? false)}</strong>
+            <span>Repo 已配置</span><strong>{String(githubStatus.github?.repoConfigured ?? false)}</strong>
+            <span>GITHUB_TOKEN 已配置</span><strong>{String(githubStatus.github?.tokenConfigured ?? false)}</strong>
+            <span>GITHUB_TOKEN normalizedLength</span><strong>{githubStatus.github?.tokenShape.normalizedLength ?? '未返回'}</strong>
+            <span>GitHub 仓库</span><strong>{githubStatus.github?.repo || '未配置'}</strong>
+            <span>Probe 状态</span><strong>{githubStatus.probe ? String(githubStatus.probe.ok) : '未执行'}</strong>
+            <span>Probe code</span><strong>{githubStatus.probe?.code || githubStatus.error_code || '未返回'}</strong>
+            <span>Probe HTTP status</span><strong>{githubStatus.probe?.status ?? '未返回'}</strong>
+          </div>
+        </section>
+      )}
       {diagnostic && (
         <section className="diagnostic-card" aria-live="polite">
           <div className="diagnostic-heading">
@@ -329,6 +394,9 @@ export default function AdminPage() {
           <li><code>ADMIN_TOKEN</code> 是否配置在 Production，而非仅 Preview。</li>
           <li>修改环境变量后是否重新 Redeploy。</li>
           <li>输入框是否误粘贴了 <code>ADMIN_TOKEN=</code> 前缀，或仍缓存旧 Token。</li>
+          <li><code>GITHUB_TOKEN</code> 不是 <code>ADMIN_TOKEN</code>：前者用于服务端访问 GitHub Issues，后者只用于进入此管理页。</li>
+          <li>如果出现 Bad credentials，请在 Vercel Production 更新 GITHUB_TOKEN 并 Redeploy。</li>
+          <li>推荐 Fine-grained PAT：仅选择仓库 <code>initial2024/lingche-feedback</code>，Issues 使用 Read and write，Contents 使用 Read，Metadata 保持 Read-only。</li>
         </ol>
       </div>
       {issues.length > 0 && (

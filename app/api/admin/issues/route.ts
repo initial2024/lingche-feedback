@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { analyzeAdminToken, getAdminTokenShape } from '@/lib/admin-token';
 import { securityConfig } from '@/lib/config';
-import { listFeedbackIssues } from '@/lib/github';
+import { GitHubApiError, listFeedbackIssues } from '@/lib/github';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,6 +64,23 @@ export async function GET(request: Request) {
       })),
     });
   } catch (error: any) {
-    return NextResponse.json({ ok: false, error: String(error?.message || error) }, { status: 502 });
+    if (error instanceof GitHubApiError) {
+      const status = error.code === 'github_token_not_configured' || error.code === 'github_repo_config_missing' ? 503 : 502;
+      return NextResponse.json({
+        ok: false,
+        error_code: error.code,
+        error: error.message,
+        diagnostic: {
+          adminAuthPassed: true,
+          githubTokenConfigured: Boolean(process.env.GITHUB_TOKEN?.trim()),
+          githubOwnerConfigured: Boolean(process.env.GITHUB_OWNER?.trim()),
+          githubRepoConfigured: Boolean(process.env.GITHUB_REPO?.trim()),
+          githubApiStatus: error.status || null,
+          githubMessage: error.githubMessage || null,
+        },
+      }, { status });
+    }
+
+    return NextResponse.json({ ok: false, error_code: 'github_api_error', error: String(error?.message || error) }, { status: 502 });
   }
 }
